@@ -1,0 +1,36 @@
+### Cara Menjalankan di iPhone 15 (Agar Kamera Tidak Diblokir Safari)
+Karena kebijakan keamanan Apple mewajibkan koneksi **HTTPS** untuk menyalakan kamera lewat *browser* Safari:
+1. Jalankan file `photobooth.html` di laptop menggunakan server lokal (misal port `8080`).
+2. Gunakan *tunnel* gratis seperti **Cloudflare Tunnel** (`cloudflared tunnel --url http://localhost:8080`) atau **ngrok** (`ngrok http 8080`) di terminal laptop untuk mendapatkan tautan `https://...` instan.
+3. Buka tautan `https://...` tersebut di **Safari iPhone 15**, izinkan akses kamera, sambungkan *remote shutter* Bluetooth, dan aplikasi siap digunakan!
+
+
+Agar bingkai desainmu di Canva bisa masuk ke aplikasi dan fotonya muncul di dalam kotak (tidak tertutup gambar bingkai), kuncinya adalah melubangi area tempat foto menjadi transparan.
+Ikuti langkah-langkah ini saat membuat bingkai di Canva:
+
+1. Buat Ukuran Kanvas yang Presisi
+
+• Buka Canva, klik Buat Desain (Create a design) -> pilih Ukuran Khusus (Custom size).
+• Masukkan ukuran Lebar: 600 px dan Tinggi: 1800 px (ini setara 5,1 x 15,2 cm dan pas 100% dengan kode aplikasi).
+
+2. Pasang Panduan 3 Kotak Foto
+
+Agar posisi foto dari aplikasi tidak meleset:
+• Tekan tombol R di keyboard untuk memunculkan 3 bentuk persegi panjang, lalu atur ukuran dan posisinya melalui menu Posisi (Position) di bagian atas Canva:
+	• Kotak Foto 1: Lebar 540, Tinggi 420 | Posisi X: 30, Y: 30
+	• Kotak Foto 2: Lebar 540, Tinggi 420 | Posisi X: 30, Y: 480
+	• Kotak Foto 3: Lebar 540, Tinggi 420 | Posisi X: 30, Y: 930
+• Beri warna hijau stabilo terang (#00FF00) pada ketiga kotak tersebut (dan pastikan tidak ada elemen desain lain yang berwarna hijau).
+• Tambahkan warna latar, stiker, tulisan nama studionya, atau tanggal di bagian bawah (Y: 1380 ke bawah) dan di pinggir-pinggir kotak hijau. (Pastikan stiker tidak menutupi area dalam kotak hijau jika tidak ingin menghalangi wajah).
+
+3. Simpan & Lubangi Bagian Hijau (Menjadi Transparan)
+
+• Klik Bagikan (Share) -> Unduh (Download) -> pilih format PNG (ukuran 600 x 1800 px), lalu unduh.
+• Buka situs gratis penghapus warna latar seperti LunaPic atau Photopea di browser:
+	• Jika pakai Photopea: Buka file PNG tadi -> pilih Magic Wand Tool (tekan tombol W) -> klik di dalam kotak hijau ke-1, tekan tombol Delete di keyboard -> ulangi di kotak hijau ke-2 dan ke-3 hingga terlihat pola kotak-kotak abu-abu (transparan) -> klik File -> Export As -> PNG.
+	• Jika pakai LunaPic: Unggah file PNG -> klik menu Edit -> Transparent Background -> klik pada area warna hijau -> simpan hasilnya sebagai PNG.
+
+4. Masukkan ke Aplikasi Photobox
+
+Setelah file PNG berlubang transparan tersimpan, tinggal pilih tombol "Unggah PNG Canva" pada layar kedua aplikasi self-photobox-app.html, dan foto pelanggan akan otomatis muncul bersih di balik desain buatanmu.
+Apakah kamu ingin saya buatkan 1 file PNG master panduan warna hijau (600 x 1800 px) supaya kamu tinggal mengunggahnya ke Canva dan menempelkan elemen hiasan di atasnya tanpa perlu repot mengatur angka koordinat X dan Y?

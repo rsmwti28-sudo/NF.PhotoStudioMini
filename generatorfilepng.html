@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generator Master Bingkai Canva</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #121212;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px;
+      }
+      button {
+        background: #2ed573;
+        color: #000;
+        border: none;
+        padding: 16px 28px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-bottom: 20px;
+      }
+      canvas {
+        max-width: 240px;
+        border: 2px solid #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Generator Master Panduan Canva (600x1800 px)</h3>
+    <button id="downloadBtn">Unduh Master PNG Sekarang</button>
+    <canvas id="c" width="600" height="1800"></canvas>
+
+    <script>
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d");
+
+      // Latar putih
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 600, 1800);
+
+      // 3 Kotak Hijau Stabilo (#00FF00) sesuai koordinat aplikasi
+      ctx.fillStyle = "#00FF00";
+      [30, 480, 930].forEach((y) => {
+        ctx.fillRect(30, y, 540, 420);
+      });
+
+      // Teks panduan kecil di bawah
+      ctx.fillStyle = "#888888";
+      ctx.font = "24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("AREA LOGO / TEKS STUDIO", 300, 1550);
+
+      // Tombol unduh langsung
+      document.getElementById("downloadBtn").addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.download = "master-panduan-canva-600x1800.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    </script>
+  </body>
+</html>

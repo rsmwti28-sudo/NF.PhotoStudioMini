@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>NF.StudioPhotoMini</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #121212;
+        color: #ffffff;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 1.2rem;
+        text-align: center;
+      }
+
+      /* Area Kamera & Framing Guide */
+      .camera-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 540px;
+        aspect-ratio: 4 / 3;
+        background: #000;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 2px solid #333;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      video.mirror {
+        transform: scaleX(-1);
+      }
+
+      /* Kotak Pandu Area Cetak (Rasio 540:420 = 9:7) */
+      .guide-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+      .guide-box {
+        height: 94%;
+        aspect-ratio: 540 / 420;
+        border: 2px dashed rgba(46, 213, 115, 0.9);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+        position: relative;
+        border-radius: 6px;
+      }
+      .guide-label {
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(46, 213, 115, 0.9);
+        color: #000;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+
+      #countdown {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 6.5rem;
+        font-weight: 800;
+        color: #fff;
+        text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
+        pointer-events: none;
+      }
+      #flash {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease-out;
+      }
+
+      /* Thumbnail 3 Pose */
+      .thumbs {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        width: 100%;
+        max-width: 540px;
+        justify-content: center;
+      }
+      .thumb-slot {
+        width: 31%;
+        aspect-ratio: 540 / 420;
+        background: #1e1e1e;
+        border: 2px dashed #444;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        color: #888;
+        overflow: hidden;
+      }
+      .thumb-slot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* Tombol Kontrol */
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 14px;
+        width: 100%;
+        max-width: 540px;
+      }
+      button,
+      .file-label {
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: #fff;
+        background: #2f3542;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      #captureBtn {
+        background: #ff4757;
+        width: 100%;
+        font-size: 1.1rem;
+        padding: 15px;
+      }
+      #saveBtn {
+        background: #1e90ff;
+      }
+      #printBtn {
+        background: #2ed573;
+        color: #000;
+      }
+      input[type="file"] {
+        display: none;
+      }
+
+      /* Hasil Akhir 4R (2 Strip) */
+      .result-area {
+        margin-top: 20px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+      canvas {
+        width: 100%;
+        max-width: 380px;
+        height: auto;
+        border: 2px solid #fff;
+        border-radius: 4px;
+        background: #fff;
+      }
+
+      /* Aturan Cetak Kertas 4R (10.2cm x 15.2cm) */
+      @media print {
+        @page {
+          size: 10.2cm 15.2cm;
+          margin: 0;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background: #fff;
+        }
+        body > *:not(.result-area) {
+          display: none !important;
+        }
+        .result-area {
+          display: block !important;
+          margin: 0;
+          padding: 0;
+        }
+        .result-area .controls {
+          display: none !important;
+        }
+        canvas {
+          width: 10.2cm !important;
+          height: 15.2cm !important;
+          max-width: none !important;
+          border: none !important;
+          border-radius: 0 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h2>📸 NF.StudioPhotoMini Photobooth</h2>
+
+    <div class="camera-wrapper">
+      <video id="video" autoplay playsinline></video>
+      <div class="guide-overlay">
+        <div class="guide-box">
+          <span class="guide-label">AREA MASUK BINGKAI</span>
+        </div>
+      </div>
+      <div id="countdown"></div>
+      <div id="flash"></div>
+    </div>
+
+    <div class="thumbs">
+      <div class="thumb-slot" id="slot0">Foto 1</div>
+      <div class="thumb-slot" id="slot1">Foto 2</div>
+      <div class="thumb-slot" id="slot2">Foto 3</div>
+    </div>
+
+    <div class="controls">
+      <button id="captureBtn">Ambil Foto 1 (Klik / Remote)</button>
+      <button id="switchCamBtn">Ganti Kamera</button>
+      <button id="resetBtn">Ulangi Sesi</button>
+      <label class="file-label">
+        Pilih Bingkai PNG
+        <input type="file" id="frameInput" accept="image/png" />
+      </label>
+    </div>
+
+    <div class="result-area" id="resultArea">
+      <canvas id="canvas4R"></canvas>
+      <div class="controls">
+        <button id="saveBtn">Simpan Gambar 4R</button>
+        <button id="printBtn">Cetak 4R</button>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const countdownEl = document.getElementById("countdown");
+      const flashEl = document.getElementById("flash");
+      const captureBtn = document.getElementById("captureBtn");
+      const switchCamBtn = document.getElementById("switchCamBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const frameInput = document.getElementById("frameInput");
+      const resultArea = document.getElementById("resultArea");
+      const canvas4R = document.getElementById("canvas4R");
+      const saveBtn = document.getElementById("saveBtn");
+      const printBtn = document.getElementById("printBtn");
+      const ctx = canvas4R.getContext("2d");
+
+      let facingMode = "environment"; // Default kamera belakang iPhone
+      let currentStream = null;
+      let isCounting = false;
+      let photos = [];
+      let customFrameImg = null;
+
+      // 1. Inisialisasi Kamera
+      async function startCamera() {
+        if (currentStream) {
+          currentStream.getTracks().forEach((track) => track.stop());
+        }
+        try {
+          currentStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: facingMode,
+              width: { ideal: 1920 },
+              height: { ideal: 1440 },
+            },
+            audio: false,
+          });
+          video.srcObject = currentStream;
+          video.classList.toggle("mirror", facingMode === "user");
+        } catch (err) {
+          alert(
+            "Kamera tidak bisa dibuka. Pastikan halaman diakses lewat HTTPS atau localhost.\nDetail: " +
+              err.message,
+          );
+        }
+      }
+
+      // 2. Unggah Bingkai PNG dari Canva (Ukuran 600 x 1800 px)
+      frameInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            customFrameImg = img;
+            alert("Bingkai PNG berhasil dimuat!");
+            if (photos.length === 3) render4R();
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // 3. Proses 1 Klik = 1 Foto (Hitung Mundur 3 Detik)
+      function triggerCapture() {
+        if (isCounting || photos.length >= 3) return;
+        isCounting = true;
+        captureBtn.disabled = true;
+
+        let count = 3;
+        countdownEl.textContent = count;
+
+        const timer = setInterval(() => {
+          count--;
+          if (count > 0) {
+            countdownEl.textContent = count;
+          } else {
+            clearInterval(timer);
+            countdownEl.textContent = "";
+            takeSnapshot();
+          }
+        }, 1000);
+      }
+
+      // 4. Tangkap Gambar Sesuai Area Kotak Pandu (Rasio 540:420)
+      function takeSnapshot() {
+        flashEl.style.opacity = "1";
+        setTimeout(() => (flashEl.style.opacity = "0"), 150);
+
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const targetRatio = 540 / 420; // Rasio lubang bingkai
+
+        let cropW = vw;
+        let cropH = vh;
+        if (vw / vh > targetRatio) {
+          cropW = vh * targetRatio;
+        } else {
+          cropH = vw / targetRatio;
+        }
+        const sx = (vw - cropW) / 2;
+        const sy = (vh - cropH) / 2;
+
+        const snapCanvas = document.createElement("canvas");
+        snapCanvas.width = 540;
+        snapCanvas.height = 420;
+        const sCtx = snapCanvas.getContext("2d");
+
+        if (facingMode === "user") {
+          sCtx.translate(540, 0);
+          sCtx.scale(-1, 1);
+        }
+        sCtx.drawImage(video, sx, sy, cropW, cropH, 0, 0, 540, 420);
+
+        const idx = photos.length;
+        photos.push(snapCanvas);
+
+        // Tampilkan ke thumbnail bawah
+        const slot = document.getElementById("slot" + idx);
+        slot.innerHTML = `<img src="${snapCanvas.toDataURL("image/jpeg", 0.9)}" />`;
+
+        isCounting = false;
+
+        if (photos.length < 3) {
+          captureBtn.disabled = false;
+          captureBtn.textContent = `Ambil Foto ${photos.length + 1} (Klik / Remote)`;
+        } else {
+          captureBtn.textContent = "Sesi Selesai (Klik Ulangi untuk Baru)";
+          render4R();
+        }
+      }
+
+      // 5. Gabungkan Menjadi 2 Strip Berdampingan di Kertas 4R (1200 x 1800 px)
+      function render4R() {
+        const stripW = 600;
+        const stripH = 1800;
+        canvas4R.width = stripW * 2; // 1200 px (10.2 cm)
+        canvas4R.height = stripH; // 1800 px (15.2 cm)
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas4R.width, canvas4R.height);
+
+        // Gambar 2 strip identik (Kiri: x=0, Kanan: x=600)
+        [0, stripW].forEach((offsetX) => {
+          photos.forEach((photo, i) => {
+            const yPos = 30 + i * (420 + 30); // y = 30, 480, 930
+            ctx.drawImage(photo, offsetX + 30, yPos, 540, 420);
+          });
+
+          if (customFrameImg) {
+            ctx.drawImage(customFrameImg, offsetX, 0, stripW, stripH);
+          } else {
+            // Footer default jika belum unggah bingkai PNG
+            ctx.fillStyle = "#222222";
+            ctx.font = "bold 26px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("MINI PHOTOBOOTH", offsetX + stripW / 2, 1520);
+            ctx.font = "20px sans-serif";
+            ctx.fillStyle = "#666666";
+            ctx.fillText(
+              new Date().toLocaleDateString("id-ID"),
+              offsetX + stripW / 2,
+              1560,
+            );
+          }
+        });
+
+        // Garis bantu potong tipis di tengah (600 px)
+        ctx.save();
+        ctx.strokeStyle = "#cccccc";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 12]);
+        ctx.beginPath();
+        ctx.moveTo(stripW, 0);
+        ctx.lineTo(stripW, stripH);
+        ctx.stroke();
+        ctx.restore();
+
+        resultArea.style.display = "flex";
+        resultArea.scrollIntoView({ behavior: "smooth" });
+      }
+
+      // 6. Reset Sesi
+      function resetSession() {
+        photos = [];
+        isCounting = false;
+        captureBtn.disabled = false;
+        captureBtn.textContent = "Ambil Foto 1 (Klik / Remote)";
+        resultArea.style.display = "none";
+        for (let i = 0; i < 3; i++) {
+          document.getElementById("slot" + i).textContent = "Foto " + (i + 1);
+        }
+      }
+
+      // Event Listeners
+      captureBtn.addEventListener("click", triggerCapture);
+      resetBtn.addEventListener("click", resetSession);
+      switchCamBtn.addEventListener("click", () => {
+        facingMode = facingMode === "environment" ? "user" : "environment";
+        startCamera();
+      });
+
+      saveBtn.addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.download = "photostrip-4R-" + Date.now() + ".png";
+        link.href = canvas4R.toDataURL("image/png");
+        link.click();
+      });
+
+      printBtn.addEventListener("click", () => window.print());
+
+      // Dukungan Remote Shutter Bluetooth (Enter / Spasi / Volume Up & Down)
+      window.addEventListener("keydown", (e) => {
+        const validKeys = [
+          "Enter",
+          " ",
+          "AudioVolumeUp",
+          "AudioVolumeDown",
+          "VolumeUp",
+          "VolumeDown",
+        ];
+        if (validKeys.includes(e.key)) {
+          e.preventDefault();
+          triggerCapture();
+        }
+      });
+
+      startCamera();
+    </script>
+  </body>
+</html>
